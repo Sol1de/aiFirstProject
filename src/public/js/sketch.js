@@ -12,7 +12,7 @@ let previousPinchPosition = null;
 let scrollThreshold = 15;
 let pinchThreshold = 20;
 let debugMode = true;
-let scrollDebounce = 500; // ms entre les déclenchements de scroll
+let scrollDebounce = 1000; // ms entre les déclenchements de scroll
 let lastScrollTime = 0;
 
 // Variables pour la gestion des mains multiples

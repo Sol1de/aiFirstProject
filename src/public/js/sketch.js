@@ -187,8 +187,8 @@ function detectScrollGesture() {
 function triggerSweetScroll(direction) {
     console.log(`Déclenchement scroll: ${direction}`);
 
-    // Option 1: Scroll d'une distance fixe
-    const scrollDistance = direction === 'down' ? 500 : -500;
+    // Inverser la direction du scroll
+    const scrollDistance = direction === 'down' ? -500 : 500;
 
     // Pour le test, on utilise le scroll standard du navigateur
     window.scrollBy({
@@ -199,13 +199,13 @@ function triggerSweetScroll(direction) {
     // Avec SweetScroll (à décommenter et adapter)
     /*
     if (window.sweetScroll) {
-        // Pour scroll relatif à la position actuelle
+        // Pour scroll relatif à la position actuelle avec direction inversée
         window.sweetScroll.to(scrollDistance, {
             relative: true
         });
 
-        // OU pour scroll vers des sections spécifiques
-        // const targetSection = direction === 'down' ? '#section-next' : '#section-prev';
+        // OU pour scroll vers des sections spécifiques avec direction inversée
+        // const targetSection = direction === 'down' ? '#section-prev' : '#section-next';
         // window.sweetScroll.to(targetSection);
     }
     */

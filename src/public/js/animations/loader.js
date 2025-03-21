@@ -2,9 +2,8 @@ document.addEventListener("DOMContentLoaded", function() {
     const loader = document.getElementById('loader');
     const progressText = document.getElementById('loading-progress');
     let resourcesLoaded = 0;
-    const totalResources = 100; // Valeur arbitraire pour la progression
+    const totalResources = 100;
 
-    // Fonction pour mettre à jour la progression
     function updateProgress(increment) {
         resourcesLoaded += increment;
         const percentage = Math.min(Math.floor((resourcesLoaded / totalResources) * 100), 100);
@@ -21,7 +20,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    // Vérifier si ml5 est chargé
     function checkML5Loaded() {
         if (typeof ml5 !== 'undefined') {
             updateProgress(30);
@@ -30,7 +28,6 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    // Vérifier si p5 est chargé
     function checkP5Loaded() {
         if (typeof p5 !== 'undefined') {
             updateProgress(20);
@@ -39,22 +36,19 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    // Initialisation des vérifications de chargement
     checkML5Loaded();
     checkP5Loaded();
 
-    // Simuler le chargement progressif des autres ressources
     let loadedCount = 0;
     const intervalId = setInterval(() => {
         loadedCount += 5;
         updateProgress(5);
 
-        if (loadedCount >= 50) { // 50% restants seront chargés progressivement
+        if (loadedCount >= 50) {
             clearInterval(intervalId);
         }
     }, 200);
 
-    // Assurer que le loader disparaît même si certaines ressources ne se chargent pas
     window.addEventListener("load", function() {
         setTimeout(() => {
             updateProgress(totalResources - resourcesLoaded);

@@ -7,9 +7,49 @@
     <title>ml5.js handPose Webcam Example</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
     <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow-x: hidden;
+        }
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+            pointer-events: none;
+        }
+        #content {
+            min-height: 500vh;
+            padding-top: 500px;
+        }
+    </style>
 </head>
 <body>
-<div style="min-height: 500vh;"></div>
-<script src="js/sketch.js"></script>
+<div id="content">
+    <h1 style="text-align:center; margin-top: 20px;">HandPose Zoom & Scroll Demo</h1>
+    <div style="text-align:center; padding: 20px;">
+        <p>Cette démo vous permet de zoomer et défiler sur la page avec des gestes de la main.</p>
+        <p>Utilisez une main pour: </p>
+        <ul style="display: inline-block; text-align: left;">
+            <li>Positionner le pouce et l'index proches puis bouger pour <b>défiler</b></li>
+            <li>Pincer le pouce et le majeur puis écarter pour <b>zoomer</b></li>
+            <li>Tenir le pouce et l'annulaire écartés puis pincer pour <b>dézoomer</b></li>
+        </ul>
+        <p>Utilisez deux mains avec les pinces pouce-index pour zoomer/dézoomer</p>
+        <p>Double-cliquez pour réinitialiser le zoom</p>
+    </div>
+    <div style="min-height: 500vh;"></div>
+</div>
+
+<!-- Importation des scripts dans l'ordre approprié -->
+<script src="js/utilities.js"></script>
+<script src="js/config.js"></script>
+<script src="js/handDetection.js"></script>
+<script src="js/zoomFeatures.js"></script>
+<script src="js/scrollFeatures.js"></script>
+<script src="js/visualization.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>

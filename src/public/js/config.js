@@ -68,7 +68,3 @@ let fistChangeDelay = 1000;
 let debugMode = true;
 
 let lastGestureTime = 0;        // Temps du dernier geste détecté
-let gestureHoldTime = 0;        // Temps pendant lequel un geste est maintenu
-let gestureStartTime = 0;       // Temps de début d'un geste
-let lastFingerDistance = 0;     // Dernière distance entre les doigts mesurée
-let fingerDistanceHistory = []; // Historique des distances pour lissage

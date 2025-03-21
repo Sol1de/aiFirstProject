@@ -9,13 +9,12 @@ function detectSingleHandZoomGestures() {
 
     // Trouver la main active
     const activeHand = hands.find(hand => hand.handedness === activeHandId);
-    if (!activeHand || !activeHand.keypoints || activeHand.keypoints.length < 21) return;
+    if (!activeHand || !activeHandId || !activeHand.keypoints || activeHand.keypoints.length < 21) return;
 
     const thumb = activeHand.keypoints[4];
     const index = activeHand.keypoints[8];
     const middle = activeHand.keypoints[12];
     const ring = activeHand.keypoints[16];
-    const pinky = activeHand.keypoints[20];
 
     if (!thumb || !index || !middle || !ring) return;
 
@@ -34,45 +33,41 @@ function detectSingleHandZoomGestures() {
     zoomCenterX = (width - handCenter.x) / width;
     zoomCenterY = handCenter.y / height;
 
-    // -------- DÉTECTION AMÉLIORÉE DE GESTES --------
-
     // Redéfinir les seuils pour améliorer la détection
     const tightPinchThreshold = pinchThreshold * 0.8;       // Seuil plus strict pour pincement
     const looseSpreadThreshold = pinchThreshold * 2.5;      // Seuil plus large pour écartement
     const veryLooseSpreadThreshold = pinchThreshold * 4;    // Pour détecter un grand écartement
 
-    // 1. État actuel des pincements (avec seuils ajustés)
+    // État actuel des pincements (avec seuils ajustés)
     const middlePinched = thumbMiddleDistance < tightPinchThreshold;
     const middleSpread = thumbMiddleDistance > looseSpreadThreshold;
     const ringPinched = thumbRingDistance < tightPinchThreshold;
     const ringSpread = thumbRingDistance > looseSpreadThreshold;
 
     // Mise à jour des états de pincement
+    if (!pinchesDetected) pinchesDetected = {};
     pinchesDetected.middle = middlePinched;
-    pinchesDetected.middleSpread = middleSpread;
     pinchesDetected.ring = ringPinched;
-    pinchesDetected.ringSpread = ringSpread;
 
     // Afficher les valeurs de distance dans la console pour le débogage
     if (debugMode && frameCount % 30 === 0) {
         console.log(`Thumb-Middle: ${thumbMiddleDistance.toFixed(1)}, Thumb-Ring: ${thumbRingDistance.toFixed(1)}`);
     }
 
-    // 2. Détection des transitions d'état (plus simple et fiable)
-    const justStartedMiddlePinch = pinchesDetected.middle && !lastPinchState.middle;
-    const justEndedMiddlePinch = !pinchesDetected.middle && lastPinchState.middle;
-    const justStartedRingPinch = pinchesDetected.ring && !lastPinchState.ring;
+    // Détection des transitions d'état
+    const middleJustPinched = pinchesDetected.middle && !lastPinchState.middle;
+    const middleJustReleased = !pinchesDetected.middle && lastPinchState.middle;
+    const ringJustPinched = pinchesDetected.ring && !lastPinchState.ring;
 
-    // 3. LOGIQUE AMÉLIORÉE POUR LE ZOOM IN (plus sensible)
-
-    // État: Début du pincement pouce-majeur (première étape pour zoom in)
-    if (justStartedMiddlePinch && !pinchesDetected.ring && canZoomAgain && gesturePhase === null) {
+    // LOGIQUE AMÉLIORÉE POUR LE ZOOM IN
+    // État: Début du pincement pouce-majeur
+    if (middleJustPinched && !pinchesDetected.ring && canZoomAgain && gesturePhase === null) {
         gesturePhase = 'start-zoom-in';
         initialFingerDistance = thumbMiddleDistance;
         console.log('👉 Début geste ZOOM IN - Pouce et majeur pincés');
     }
     // État: Le pincement pouce-majeur se termine, transition vers écartement
-    else if (gesturePhase === 'start-zoom-in' && justEndedMiddlePinch) {
+    else if (gesturePhase === 'start-zoom-in' && middleJustReleased) {
         gesturePhase = 'spreading';
         fingerSpreadDistance = thumbMiddleDistance;
         console.log('👐 ZOOM IN en cours - Écartement des doigts');
@@ -107,23 +102,20 @@ function detectSingleHandZoomGestures() {
         }
     }
 
-    // 4. LOGIQUE AMÉLIORÉE POUR LE ZOOM OUT (plus fiable)
+    // LOGIQUE AMÉLIORÉE POUR LE ZOOM OUT
 
-    // Condition pour démarrer le dézoom: l'écart est large entre pouce et annulaire
-    // ET il n'y a pas de geste en cours ET le pouce et majeur ne sont pas pincés
+    // Condition pour démarrer le dézoom: écart large entre pouce et annulaire
     if (thumbRingDistance > veryLooseSpreadThreshold && gesturePhase === null &&
         !pinchesDetected.middle && canZoomAgain &&
         !pinchesDetected.ring && currentZoomIndex > 0) {
 
         gesturePhase = 'start-zoom-out';
         initialFingerDistance = thumbRingDistance;
+        lastZoomTime = millis();  // Utilisation d'une variable existante
         console.log('👉 Début geste ZOOM OUT - Pouce et annulaire écartés');
-
-        // Feedback visuel qui montre que le geste est reconnu
-        // (pourrait être une vibration ou un effet visuel)
     }
-    // Détecter quand l'utilisateur pince pouce et annulaire pour finaliser le dézoom
-    else if (gesturePhase === 'start-zoom-out' && justStartedRingPinch) {
+    // Détecter quand l'utilisateur pince pouce et annulaire
+    else if (gesturePhase === 'start-zoom-out' && ringJustPinched) {
         if (currentZoomIndex > 0 && canZoomAgain) {
             // Effectuer le zoom out
             startZoomAnimation(zoomLevels[currentZoomIndex], zoomLevels[currentZoomIndex - 1]);
@@ -146,12 +138,10 @@ function detectSingleHandZoomGestures() {
         console.log('❌ Geste ZOOM OUT annulé - Écartement insuffisant');
     }
 
-    // 5. MÉTHODE ALTERNATIVE DE ZOOM OUT (simplement pincer l'annulaire)
-    // Cette alternative peut aider si la méthode principale est difficile
-    if (currentZoomIndex > 0 && justStartedRingPinch && !pinchesDetected.middle &&
+    // MÉTHODE ALTERNATIVE DE ZOOM OUT (simplement pincer l'annulaire)
+    if (currentZoomIndex > 0 && ringJustPinched && !pinchesDetected.middle &&
         gesturePhase === null && canZoomAgain) {
 
-        // Confirmer que le majeur n'est pas pincé (pour éviter les confusions)
         if (!pinchesDetected.middle) {
             // Effectuer le zoom out
             startZoomAnimation(zoomLevels[currentZoomIndex], zoomLevels[currentZoomIndex - 1]);
@@ -165,12 +155,12 @@ function detectSingleHandZoomGestures() {
         }
     }
 
-    // 6. MÉTHODE ALTERNATIVE DE ZOOM IN (pour les cas où la méthode principale est difficile)
-    // Pincer puis relâcher rapidement le majeur dans un délai court
-    if (justEndedMiddlePinch && gesturePhase === null && canZoomAgain &&
-        millis() - lastGestureTime < 500 && currentZoomIndex < zoomLevels.length - 1) {
+    // MÉTHODE ALTERNATIVE DE ZOOM IN
+    const currentTime = millis();
+    if (middleJustReleased && gesturePhase === null && canZoomAgain &&
+        currentTime - lastZoomTime < 500 && currentZoomIndex < zoomLevels.length - 1) {
 
-        // Le majeur vient d'être relâché rapidement après un pincement, effectuer un zoom in
+        // Le majeur vient d'être relâché rapidement après un pincement
         startZoomAnimation(zoomLevels[currentZoomIndex], zoomLevels[currentZoomIndex + 1]);
         currentZoomIndex++;
 
@@ -181,15 +171,14 @@ function detectSingleHandZoomGestures() {
     }
 
     // Mettre à jour le temps du dernier geste
-    if (justStartedMiddlePinch || justStartedRingPinch) {
-        lastGestureTime = millis();
+    if (middleJustPinched || ringJustPinched) {
+        lastZoomTime = currentTime;  // Réutilisation d'une variable existante
     }
 
     // Mémoriser les états actuels pour la prochaine frame
+    if (!lastPinchState) lastPinchState = {};
     lastPinchState.middle = pinchesDetected.middle;
-    lastPinchState.middleSpread = pinchesDetected.middleSpread;
     lastPinchState.ring = pinchesDetected.ring;
-    lastPinchState.ringSpread = pinchesDetected.ringSpread;
 }
 
 // ZOOM À DEUX MAINS

@@ -1,0 +1,124 @@
+/* ... En tête de page ... */
+header {
+    display: flex;
+    height: 72px;
+    width: 100%;
+    background-color: var(--divs);
+    color: var(--texte);
+    justify-content: space-between;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    padding: 9px 93px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ... Taille & position du logo ... */
+.logo-container {
+    display: flex;
+    justify-content: flex-end;
+    width: fit-content;
+}
+
+#logo {
+    height: 100%;
+    width: 100%;
+}
+
+/* ... Navigation ... */
+nav ul {
+    display: flex;
+    list-style: none;
+    gap: 48px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: var(--texte);
+    font-size: 16px;
+    transition: var(--transition)
+}
+
+nav ul li a:hover {
+    color: #517292;
+}
+
+/* ... Boutons de connexion/inscription ... */
+.comptes {
+    display: flex;
+    gap: 24px;
+}
+
+.connexion {
+    text-decoration: none;
+    color: var(--texte);
+    border: 1px solid var(--CTA);
+    padding: 12px 20px;
+    border-radius: 50px;
+    transition: var(--transition)
+}
+
+.connexion:hover {
+    background-color: var(--CTA);
+}
+
+.inscription {
+    text-decoration: none;
+    color: var(--texte);
+    background-color: var(--CTA);
+    border: 1px solid var(--CTA);
+    padding: 8px 16px;
+    border-radius: 8px;
+    padding: 12px 20px;
+    border-radius: 50px;
+    transition: var(--transition)
+}
+
+.inscription:hover {
+    background-color: transparent;
+}
+
+/* ... Responsive à partir de 1112px ... */
+@media (max-width: 1112px) {
+
+    /* ... Responsive en tête de page ... */
+    header {
+        height: auto;
+        padding: 9px 93px;
+        justify-content: center;
+        gap: 24px;
+    }
+}
+
+/* ... Responsive à partir de 750px ... */
+@media (max-width: 750px) {
+
+    /* ... Responsive en tête de page ... */
+    header {
+        justify-content: space-between;
+        padding: 0px 20px;
+    }
+
+    nav {
+        display: none;
+    }
+
+    .comptes {
+        display: none;
+    }
+
+    #logo {
+        height: 70%;
+        width: 70%;
+    }
+}
+
+/* ... Responsive à partir de 300px ... */
+@media (max-width: 300px) {
+
+    /* ... Responsive en tête de page ... */
+    header {
+        padding: 0px;
+    }
+}

@@ -1,55 +1,350 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ml5.js handPose Webcam Example</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
-    <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
-    <style>
-        body {
-            margin: 0;
-            overflow-x: hidden;
-        }
-        canvas {
-            display: block;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 100;
-            pointer-events: none;
-        }
-        #content {
-            min-height: 500vh;
-            padding-top: 500px;
-        }
-    </style>
-</head>
-<body>
-<div id="content">
-    <h1 style="text-align:center; margin-top: 20px;">HandPose Zoom & Scroll Demo</h1>
-    <div style="text-align:center; padding: 20px;">
-        <p>Cette démo vous permet de zoomer et défiler sur la page avec des gestes de la main.</p>
-        <p>Utilisez une main pour: </p>
-        <ul style="display: inline-block; text-align: left;">
-            <li>Positionner le pouce et l'index proches puis bouger pour <b>défiler</b></li>
-            <li>Pincer le pouce et le majeur puis écarter pour <b>zoomer</b></li>
-            <li>Tenir le pouce et l'annulaire écartés puis pincer pour <b>dézoomer</b></li>
-        </ul>
-        <p>Utilisez deux mains avec les pinces pouce-index pour zoomer/dézoomer</p>
-        <p>Double-cliquez pour réinitialiser le zoom</p>
-    </div>
-    <div style="min-height: 500vh;"></div>
-</div>
+    <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Rendu - CSS Layouting</title>
+            <link rel="stylesheet" href="css/header.css">
+            <link rel="stylesheet" href="css/burger.css">
+            <link rel="stylesheet" href="css/global.css">
+            <link rel="stylesheet" href="css/main.css">
+            <link rel="stylesheet" href="css/aside.css">
+            <link rel="stylesheet" href="css/footer.css">
+            <link rel="stylesheet" href="css/scrollbar.css">
+            <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+            <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
+        </head>
 
-<!-- Importation des scripts dans l'ordre approprié -->
-<script src="js/utilities.js"></script>
-<script src="js/config.js"></script>
-<script src="js/handDetection.js"></script>
-<script src="js/zoomFeatures.js"></script>
-<script src="js/scrollFeatures.js"></script>
-<script src="js/visualization.js"></script>
-<script src="js/app.js"></script>
-</body>
+    <body>
+        <!-- En tête de page / Navigation -->
+        <header>
+            <!-- Bouton Menu burger -->
+            <div class="menu-burger-btn">
+                <button class="menu" onclick="toggleMenu(); animation();" >
+                    <svg width="50" height="50" viewBox="0 0 100 100">
+                        <path class="line line1" d="M 20,29.000046 H 80.000231 C 80.000231,29.000046 94.498839,28.817352 94.532987,66.711331 94.543142,77.980673 90.966081,81.670246 85.259173,81.668997 79.552261,81.667751 75.000211,74.999942 75.000211,74.999942 L 25.000021,25.000058" />
+                        <path class="line line2" d="M 20,50 H 80" />
+                        <path class="line line3" d="M 20,70.999954 H 80.000231 C 80.000231,70.999954 94.498839,71.182648 94.532987,33.288669 94.543142,22.019327 90.966081,18.329754 85.259173,18.331003 79.552261,18.332249 75.000211,25.000058 75.000211,25.000058 L 25.000021,74.999942" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Logo Prompt -->
+            <div class="logo-container">
+                <img src="Prompt.svg" alt="logo prompt" id="logo">
+            </div>
+
+            <!-- Navigation -->
+            <nav>
+                <ul>
+                    <li><a href="#">Accueil</a></li>
+                    <li><a href="#">A propos</a></li>
+                    <li><a href="#">Contact</a></li>
+                    <li><a href="#">Tendances</a></li>
+                </ul>
+            </nav>
+
+            <!-- Boutons Connexion/Deconnexion -->
+            <div class="comptes">
+                <a class="connexion" href="#">Connexion</a>
+                <a class="inscription" href="#">Inscription</a>
+            </div>
+        </header>
+
+        <!-- Menu burger lorsque la page est < 750px -->
+        <div id="menu-burger">
+            <ul>
+                <li><a href="#">Accueil</a></li>
+                <li><a href="#">A propos</a></li>
+                <li><a href="#">Contact</a></li>
+                <li><a href="#">Tendances</a></li>
+            </ul>
+        </div>
+
+        <!-- Affichage des posts, infos utilisateurs et # populaire -->
+        <div class="container-post-infos">
+
+            <!-- posts -->
+            <main>
+                <!-- Premier post -->
+                <div class="post" data-aos="fade-up">
+                    <div class="profile">
+                        <img src="profiles/profile 1.svg" alt="profile image">
+
+                        <div class="username">
+                            <p>profile 1</p>
+                            <p>@profile-1</p>
+                        </div>
+                    </div>
+
+                    <div class="post-title">
+                        <p>Lorem ipsum dolor sit amet consectetur.</p>
+                    </div>
+
+                    <div class="post-texte">
+                        Lorem ipsum dolor sit amet consectetur. Dolor nec non augue scelerisque. Sem auctor varius adipiscing nunc posuere elit ut. Dui dignissim facilisi nec pharetra nunc. Turpis neque commodo molestie ultrices aliquet. At orci dictumst morbi hendrerit.
+                    </div>
+
+                    <div class="container-image">
+                        <img src="images/image1.png" alt="post image" class="post-image">
+                    </div>
+                </div>
+
+                <!-- Separateur -->
+                <hr class="separator"></hr>
+                <!-- Separateur -->
+
+                <!-- Deuxième post -->
+                <div class="post" data-aos="fade-up">
+                    <div class="profile">
+                        <img src="profiles/profile 2.svg" alt="profile image">
+
+                        <div class="username">
+                            <p>profile 2</p>
+                            <p>@profile-2</p>
+                        </div>
+                    </div>
+
+                    <div class="post-title">
+                        <p>Lorem ipsum dolor sit amet consectetur.</p>
+                    </div>
+
+                    <div class="post-texte">
+                        Lorem ipsum dolor, sit amet consectetur adipisicing elit. Doloremque fugit suscipit quaerat est porro libero, earum qui, odit eum ipsum mollitia esse dolorem recusandae nam quos totam. Quam, eligendi quaerat.
+                    </div>
+
+                    <div class="container-image">
+                        <img src="images/image2.png" alt="post image" class="post-image">
+                    </div>
+                </div>
+
+                <!-- Separateur -->
+                <hr class="separator"></hr>
+                <!-- Separateur -->
+
+                <!-- troisième post -->
+                <div class="post" data-aos="fade-up">
+                    <div class="profile">
+                        <img src="profiles/profile 3.svg" alt="profile image">
+
+                        <div class="username">
+                            <p>profile 3</p>
+                            <p>@profile-3</p>
+                        </div>
+                    </div>
+
+                    <div class="post-title">
+                        <p>Lorem ipsum dolor sit amet consectetur.</p>
+                    </div>
+
+                    <div class="post-texte">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Est accusamus nisi corporis eligendi. Vel accusantium, unde voluptate expedita totam, laborum adipisci cupiditate tempore ipsum minus ut impedit molestiae soluta consequatur?
+                        Voluptas mollitia non quis laboriosam veritatis ratione fugiat ducimus nulla excepturi, iste accusamus officiis natus, expedita debitis exercitationem repellat! Veritatis ipsum necessitatibus ut laboriosam, quisquam sequi repellat vero rem beatae.
+                    </div>
+
+                    <div class="container-image">
+                        <img src="images/image3.png" alt="post image" class="post-image">
+                    </div>
+                </div>
+
+                <!-- Separateur -->
+                <hr class="separator"></hr>
+                <!-- Separateur -->
+
+                <!-- quatrième post -->
+                <div class="post" data-aos="fade-up">
+                    <div class="profile">
+                        <img src="profiles/profile 2.svg" alt="profile image">
+
+                        <div class="username">
+                            <p>profile 4</p>
+                            <p>@profile-4</p>
+                        </div>
+                    </div>
+
+                    <div class="post-title">
+                        <p>Lorem ipsum dolor sit amet consectetur.</p>
+                    </div>
+
+                    <div class="post-texte">
+                        Lorem ipsum dolor sit amet consectetur, adipisicing elit. Officia harum dolore possimus nobis? Delectus consequuntur, tempore maxime velit laudantium doloremque hic ducimus culpa eaque et veritatis saepe excepturi maiores exercitationem.
+                    </div>
+
+                    <div class="container-image">
+                        <img src="images/image4.png" alt="post image" class="post-image">
+                    </div>
+                </div>
+
+                <!-- Separateur -->
+                <hr class="separator"></hr>
+                <!-- Separateur -->
+
+                <!-- cinquième post -->
+                <div class="post" data-aos="fade-up">
+                    <div class="profile">
+                        <img src="profiles/profile 1.svg" alt="profile image">
+
+                        <div class="username">
+                            <p>profile 5</p>
+                            <p>@profile-5</p>
+                        </div>
+                    </div>
+
+                    <div class="post-title">
+                        <p>Lorem ipsum dolor sit amet consectetur.</p>
+                    </div>
+
+                    <div class="post-texte">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Placeat, iste suscipit mollitia dolorem quod nesciunt vero numquam nihil quae ducimus modi expedita consectetur recusandae ratione porro, eos laudantium sequi illum.
+                    </div>
+
+                    <div class="container-image">
+                        <img src="images/image5.png" alt="post image" class="post-image">
+                    </div>
+                </div>
+
+                <!-- Separateur -->
+                <hr class="separator"></hr>
+                <!-- Separateur -->
+
+                <!-- sixème post -->
+                <div class="post" data-aos="fade-up">
+                    <div class="profile">
+                        <img src="profiles/profile 3.svg" alt="profile image">
+
+                        <div class="username">
+                            <p>profile 6</p>
+                            <p>@profile-6</p>
+                        </div>
+                    </div>
+
+                    <div class="post-title">
+                        <p>Lorem ipsum dolor sit amet consectetur.</p>
+                    </div>
+
+                    <div class="post-texte">
+                        Lorem ipsum dolor sit amet consectetur, adipisicing elit. Libero earum impedit illo pariatur dolor eius veniam necessitatibus expedita voluptates vel non modi autem perferendis similique quasi, sed repudiandae. Et, animi?
+                        Animi quidem dolor, dolorum sapiente placeat voluptate quisquam optio ex! Tempora molestiae odit adipisci dolore quos iure, rerum sequi, unde laborum quam numquam voluptate facere animi aspernatur hic dignissimos voluptatum?
+                    </div>
+
+                    <div class="container-image">
+                        <img src="images/image6.png" alt="post image" class="post-image">
+                    </div>
+                </div>
+
+                <!-- Separateur -->
+                <hr class="separator"></hr>
+                <!-- Separateur -->
+
+                <!-- septième post -->
+                <div class="post" data-aos="fade-up">
+                    <div class="profile">
+                        <img src="profiles/profile 1.svg" alt="profile image">
+
+                        <div class="username">
+                            <p>profile 7</p>
+                            <p>@profile-7</p>
+                        </div>
+                    </div>
+
+                    <div class="post-title">
+                        <p>Lorem ipsum dolor sit amet consectetur.</p>
+                    </div>
+
+                    <div class="post-texte">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit. A ullam ut libero atque perspiciatis voluptatibus. Nobis blanditiis vitae nemo quibusdam magni. Totam sequi laudantium quae et quia voluptate accusantium veniam!
+                    </div>
+
+                    <div class="container-image">
+                        <img src="images/image7.png" alt="post image" class="post-image">
+                    </div>
+                </div>
+
+                <!-- Separateur -->
+                <hr class="separator"></hr>
+                <!-- Separateur -->
+
+                <!-- huitième post -->
+                <div class="post" data-aos="fade-up" >
+                    <div class="profile">
+                        <img src="profiles/profile 2.svg" alt="profile image">
+
+                        <div class="username">
+                            <p>profile 8</p>
+                            <p>@profile-8</p>
+                        </div>
+                    </div>
+
+                    <div class="post-title">
+                        <p>Lorem ipsum dolor sit amet consectetur.</p>
+                    </div>
+
+                    <div class="post-texte">
+                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Expedita incidunt illo perspiciatis quos natus obcaecati soluta, officia libero minus at ea dolores nam veritatis rem ipsam voluptatibus similique, sint modi.
+                    </div>
+
+                    <div class="container-image">
+                        <img src="images/image8.png" alt="post image" class="post-image">
+                    </div>
+                </div>
+
+            </main>
+
+            <!-- infos utilisateurs & # populaire -->
+            <aside>
+                <div class="user-infos">
+                    <img src="profiles/gen-profile.svg" alt="profil general">
+
+                    <div class="user-status">
+                        <p>Guest</p>
+
+                        <div class="ellipse">
+                            <div></div>
+                            <p>connected</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="trends">
+                    <p>Trends</p>
+                    <ol>
+                        <li>#SpaceVoyage2023</li>
+                        <li>#TechTrendsX</li>
+                        <li>#EcoFriendlyLiving</li>
+                        <li>#FutureOfWork</li>
+                        <li>#VirtualRealityAdventures</li>
+                        <li>#InnovationNation</li>
+                        <li>#HealthyHabitsChallenge</li>
+                        <li>#IndieGameFever</li>
+                        <li>#TravelDreams2023</li>
+                        <li>#MindfulLivingNow</li>
+                    </ol>
+                </div>
+            </aside>
+        </div>
+
+        <footer>
+            <div class="prompt-rights">Prompt @ 2023-2024. All rights reserved.</div>
+            <div class="social">
+                <a href="#"><img src="social/youtube.svg" alt="youtube"></a>
+                <a href="#"><img src="social/facebook.svg" alt="facebook"></a>
+                <a href="#"><img src="social/twitter.svg" alt="twitter"></a>
+                <a href="#"><img src="social/instagram.svg" alt="instagram"></a>
+                <a href="#"><img src="social/linkedin.svg" alt="linkedin"></a>
+            </div>
+        </footer>
+
+        <!-- infos utilisateurs & # populaire -->
+        <script src="js/animations/script.js"></script>
+        <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+        <script>AOS.init();</script>
+        <script src="js/utilities.js"></script>
+        <script src="js/config.js"></script>
+        <script src="js/handDetection.js"></script>
+        <script src="js/zoomFeatures.js"></script>
+        <script src="js/scrollFeatures.js"></script>
+        <script src="js/visualization.js"></script>
+        <script src="js/app.js"></script>
+    </body>
 </html>

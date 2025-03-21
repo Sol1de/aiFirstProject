@@ -1,0 +1,16 @@
+/*stylyse the scrollbar*/
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--CTA);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #1e2c38;
+}

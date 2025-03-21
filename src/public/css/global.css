@@ -1,0 +1,55 @@
+/* ... imports de polices ... */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+/* ... Reset & variables CSS ... */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    --background: #0B162C;
+    --divs: #1C2942;
+    --CTA: #3B556D;
+    --surbrillance: #5FC2BA;
+    --texte: #FFFFFF;
+    --transition: cubic-bezier(0.075, 0.82, 0.165, 1) 0.3s;
+}
+
+/* ... Style global du fond de page ... */
+body {
+    height: auto;
+    background-color: var(--background);
+}
+
+/* ... Layout main & aside ... */
+.container-post-infos {
+    display: grid;
+    grid-template-areas: "main aside";
+    width: 100%;
+    height: auto;
+    grid-template-columns: 3fr 1fr;
+    padding: 80px 93px;
+    gap: 20px;
+}
+
+/* ... Responsive à partir de 750px ... */
+@media (max-width: 750px) {
+
+    /* ... Responsive container main & aside ... */
+    .container-post-infos {
+        grid-template-areas: "aside"
+                                "main";
+        grid-template-columns: 1fr;
+        padding: 5px 20px;
+        height: fit-content;
+    }
+}
+
+/* ... Responsive à partir de 300px ... */
+@media (max-width: 300px) {
+
+    /* ... Responsive container main & aside ... */
+    .container-post-infos {
+        padding: 2px 3px;
+    }
+}

@@ -1,0 +1,127 @@
+/* ... Layout aside ... */
+aside {
+    display: grid;
+    position: sticky;
+    top: 10px;
+    grid-template-rows: 1fr 3fr;
+    grid-template-areas: "user-infos"
+                        "trends";
+    gap: 10px;
+    height: 750px;
+    grid-area: aside;
+}
+
+/* ... aside 1ere section ... */
+.user-infos {
+    display: flex;
+    grid-area: user-infos;
+    background-color: var(--divs);
+    border-radius: 12px;
+    padding: 0px 10px;
+}
+
+.user-status {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: var(--texte);
+}
+
+.user-status p:nth-child(1) {
+    font-family: 'Inter', sans-serif;
+    font-size: 39px;
+    font-weight: 700;
+}
+
+.user-status p:nth-child(2) {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--surbrillance);
+}
+
+.ellipse {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 7px 2px;
+}
+
+.ellipse div {
+    height: 12px;
+    width: 12px;
+    border-radius: 50%;
+    background-color: var(--surbrillance);
+}
+
+/* ... aside 2eme section ... */
+.trends {
+    grid-area: trends;
+    background-color: var(--divs);
+    display: flex;
+    padding: 20px;
+    flex-direction: column;
+    color: var(--texte);
+    border-radius: 12px;
+}
+
+.trends p {
+    font-family: Inter;
+    font-size: 30px;
+    font-weight: 600;
+}
+
+.trends ol {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    font-family: Inter;
+    font-size: 20px;
+    font-weight: 500;
+    padding: 20px;
+}
+
+/* ... Responsive à partir de 750px ... */
+@media (max-width: 750px) {
+
+    /* ... Responsive aside ... */
+    aside {
+        position: relative;
+        height: fit-content;
+    }
+
+    .user-infos {
+        justify-content: center;
+    }
+
+    .trends {
+        gap: 0px;
+        align-items: center;
+        height: fit-content;
+    }
+
+    .trends ol {
+        font-size: 14px;
+        gap: 20px;
+        align-items: center;
+        list-style-type: none;
+    }
+}
+
+/* ... Responsive à partir de 300px ... */
+@media (max-width: 300px) {
+
+    /* ... Responsive aside ... */
+    aside {
+        top: 5px;
+        gap: 5px;
+    }
+
+    .user-status p:nth-child(1) {
+        font-size: 30px;
+    }
+
+    .user-status p:nth-child(2) {
+        font-size: 14px;
+    }
+}

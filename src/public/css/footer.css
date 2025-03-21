@@ -1,0 +1,57 @@
+/* ... Layout pied de page ... */
+footer {
+    display: flex;
+    width: 100%;
+    padding: 24px 93px;
+    align-items: center;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+    color: var(--texte);
+    background-color: var(--divs);
+}
+
+footer img {
+    transition: var(--transition);
+}
+
+footer img:hover {
+    transform: scale(1.5);
+    cursor: pointer;
+}
+
+.prompt-rights {
+    flex: 1 0 0;
+    font-size: 14px;
+}
+
+.social {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 16px;
+    flex: 1 0 0;
+}
+
+/* ... Responsive à partir de 750px ... */
+@media (max-width: 750px) {
+
+    /* ... responsive footer ... */
+    footer {
+        padding: 20px 20px;
+        gap: 10px;
+    }
+
+    .social {
+        gap: 5px;
+    }
+}
+
+/* ... Responsive à partir de 300px ... */
+@media (max-width: 300px) {
+
+    /* ... Responsive footer ... */
+    footer {
+        padding: 5px 2px;
+        gap: 10px;
+    }
+}

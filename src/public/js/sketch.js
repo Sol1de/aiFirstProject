@@ -52,10 +52,14 @@ let fingerPinchCount = 0;
 let initialFingerState = null;    // "pinched" ou "spread" ou null
 let fingerStateChanging = false;  // Si un changement d'état est en cours
 let fingerSpreadThreshold = 150;  // Seuil pour considérer les doigts comme écartés
-
-// Variables pour la gestion des mains multiples
 let activeHandId = null;
 let handDetectionTimes = {};
+// Ajoutez ces variables pour la détection du poing
+let isFistClosed = false;        // État actuel du poing
+let fistStateChanged = false;    // Si le poing vient de changer d'état
+let lastFistChangeTime = 0;      // Horodatage du dernier changement d'état
+let fistChangeDelay = 1000;      // Délai minimum entre les changements d'état (ms)
+let fingerCloseThreshold = 40;
 
 function preload() {
     handPose = ml5.handPose();
@@ -81,14 +85,15 @@ function drawHandPoints() {
 
         if (isActiveHand) {
             // Pour la main active, colorer différemment selon l'état
+            const palm = hand.keypoints[0];
             const thumb = hand.keypoints[4];
-            if (!thumb) continue;
+            if (!thumb || !palm) continue;
 
-            // Dessiner les connexions de la main avec vérification
+            // Dessiner les connexions de la main
             stroke(0, 200, 0, 150);
             strokeWeight(2);
 
-            // Connecter les articulations avec vérification de sécurité
+            // Connecter les articulations
             for (let j = 0; j < 20; j += 4) {
                 if (j > 0 && hand.keypoints[j] && hand.keypoints[j+1]) {
                     line(width - hand.keypoints[j].x, hand.keypoints[j].y,
@@ -100,7 +105,7 @@ function drawHandPoints() {
                 }
             }
 
-            // Connecter les articulations des doigts avec vérification
+            // Connecter les articulations des doigts
             for (let j = 1; j <= 20; j++) {
                 if (j % 4 !== 0 && j < 20 && hand.keypoints[j] && hand.keypoints[j+1]) {
                     line(width - hand.keypoints[j].x, hand.keypoints[j].y,
@@ -108,12 +113,24 @@ function drawHandPoints() {
                 }
             }
 
-            // Dessiner tous les points avec vérification
+            // Dessiner tous les points avec couleur selon l'état
             for (let j = 0; j < hand.keypoints.length; j++) {
                 let keypoint = hand.keypoints[j];
                 if (!keypoint) continue;
 
                 const invertedX = width - keypoint.x;
+
+                // Si c'est la paume, la colorier selon l'état du poing
+                if (j === 0) {
+                    if (isFistClosed) {
+                        fill(255, 0, 0); // Rouge pour poing fermé
+                    } else {
+                        fill(0, 255, 0); // Vert pour poing ouvert
+                    }
+                    noStroke();
+                    circle(invertedX, keypoint.y, 20);
+                    continue;
+                }
 
                 // Déterminer si c'est un bout de doigt
                 const isFingerTip = [4, 8, 12, 16, 20].includes(j);
@@ -122,28 +139,21 @@ function drawHandPoints() {
                 if (isFingerTip) {
                     // Points du bout des doigts
                     if (j === 4) {
-                        // Pouce toujours en bleu
+                        // Pouce en bleu
                         fill(0, 100, 255);
                         noStroke();
-                        circle(invertedX, keypoint.y, 15);
+                        circle(invertedX, keypoint.y, 12);
                     } else {
-                        // Autres doigts selon leur proximité avec le pouce
-                        if (thumb) {
-                            const distanceToThumb = dist(thumb.x, thumb.y, keypoint.x, keypoint.y);
-                            const isPinching = distanceToThumb < fullPinchThreshold;
-
-                            if (isPinching) {
-                                // Doigt qui pince le pouce
-                                fill(255, 0, 0);
-                                noStroke();
-                                circle(invertedX, keypoint.y, 15);
-                            } else {
-                                // Doigt écarté
-                                fill(0, 255, 0);
-                                noStroke();
-                                circle(invertedX, keypoint.y, 12);
-                            }
+                        // Autres doigts
+                        if (isFistClosed) {
+                            // Doigts en rouge pour poing fermé
+                            fill(255, 50, 50);
+                        } else {
+                            // Doigts en vert pour poing ouvert
+                            fill(50, 255, 50);
                         }
+                        noStroke();
+                        circle(invertedX, keypoint.y, 12);
                     }
                 } else {
                     // Points des articulations
@@ -152,23 +162,6 @@ function drawHandPoints() {
                     circle(invertedX, keypoint.y, 6);
                 }
             }
-
-            // Afficher l'état des doigts
-            fill(255);
-            noStroke();
-            textSize(16);
-            textAlign(LEFT);
-
-            if (initialFingerState === "pinched") {
-                text("Écarter les doigts pour zoomer", 20, height - 30);
-            } else if (initialFingerState === "spread") {
-                text("Pincer pour dézoomer", 20, height - 30);
-            } else if (fingerPinchCount >= 3) {
-                text("Doigts pincés détectés", 20, height - 30);
-            } else if (isPinching) {
-                text("Mode scroll actif", 20, height - 30);
-            }
-
         } else {
             // Main non active
             for (let j = 0; j < hand.keypoints.length; j++) {
@@ -205,6 +198,10 @@ function draw() {
         detectSingleHandGestures();
     }
 
+    // Afficher les instructions à l'écran
+    drawGestureInstructions();
+
+    // Afficher les informations de débogage si activé
     if (debugMode) {
         displayDebugInfo();
     }
@@ -215,7 +212,6 @@ function detectSingleHandGestures() {
         // Réinitialiser les états
         isPinching = false;
         singleHandZoomActive = false;
-        initialFingerState = null;
         previousPinchPosition = null;
         return;
     }
@@ -224,210 +220,158 @@ function detectSingleHandGestures() {
     const activeHand = hands.find(hand => hand.handedness === activeHandId);
     if (!activeHand || !activeHand.keypoints || activeHand.keypoints.length < 21) return;
 
-    // Points des doigts
+    // Points importants de la main
     const thumb = activeHand.keypoints[4];
     const index = activeHand.keypoints[8];
     const middle = activeHand.keypoints[12];
     const ring = activeHand.keypoints[16];
-    const pinky = activeHand.keypoints[20];
 
-    if (!thumb || !index || !middle || !ring || !pinky) return;
-
-    // Calcul des distances
+    // Calculer les distances
     const thumbIndexDistance = dist(thumb.x, thumb.y, index.x, index.y);
     const thumbMiddleDistance = dist(thumb.x, thumb.y, middle.x, middle.y);
     const thumbRingDistance = dist(thumb.x, thumb.y, ring.x, ring.y);
-    const thumbPinkyDistance = dist(thumb.x, thumb.y, pinky.x, pinky.y);
 
-    // Calcul du centre de la main (pour le point focal du zoom)
-    const handCenter = {
-        x: (thumb.x + index.x + middle.x + ring.x + pinky.x) / 5,
-        y: (thumb.y + index.y + middle.y + ring.y + pinky.y) / 5
+    // Position du pincement
+    const pinchPosition = {
+        x: (thumb.x + index.x) / 2,
+        y: (thumb.y + index.y) / 2
     };
 
-    // Définition des positions de zoom à l'écran (inverse l'axe X pour l'effet mirroir)
-    zoomCenterX = (width - handCenter.x) / width;
-    zoomCenterY = handCenter.y / height;
+    // Détection d'anciens états (détection du poing fermé)
+    const fistStateWasOpen = !isFistClosed;
 
-    // ------- DÉTECTION ZOOM IN (3 doigts pincés puis écartés) -------
-    const threeFingersPinched =
-        thumbIndexDistance < fullPinchThreshold &&
-        thumbMiddleDistance < fullPinchThreshold &&
-        thumbRingDistance > fullPinchThreshold;
+    // ------ NOUVEAUX GESTES DE ZOOM ------
 
-    // ------- DÉTECTION ZOOM OUT (4 doigts écartés puis pincés) -------
-    const fourFingersPinched =
-        thumbIndexDistance < fullPinchThreshold &&
-        thumbMiddleDistance < fullPinchThreshold &&
-        thumbRingDistance < fullPinchThreshold &&
-        thumbPinkyDistance > fullPinchThreshold;
+    // 1. ZOOM IN avec le pouce et le majeur
+    if (thumbMiddleDistance < pinchThreshold && thumbIndexDistance > pinchThreshold * 1.4 && canZoomAgain) {
+        console.log("ZOOM IN avec pouce+majeur");
 
-    // Calcul de la distance totale de pincement (pour mesurer l'écartement)
-    const totalPinchDistance = thumbIndexDistance + thumbMiddleDistance + thumbRingDistance;
+        // Augmenter le niveau de zoom
+        if (currentZoomIndex < zoomLevels.length - 1) {
+            zoomCenterX = 0.5; // Centrer le zoom
+            zoomCenterY = 0.3; // Légèrement au-dessus du centre
 
-    // ------- LOGIQUE DE ZOOM -------
+            startZoomAnimation(zoomLevels[currentZoomIndex], zoomLevels[currentZoomIndex + 1]);
+            currentZoomIndex++;
 
-    // Affichage pour le debug - IMPORTANT: GARDEZ CES LOGS ACTIFS
-    console.log({
-        threeFingersPinched,
-        fourFingersPinched,
-        totalPinchDistance,
-        initialFingerState,
-        singleHandZoomActive
-    });
-
-    if (!singleHandZoomActive) {
-        // INITIALISATION DU ZOOM selon la configuration des doigts
-        if (threeFingersPinched) {
-            console.log("INIT: Geste de ZOOM IN détecté (3 doigts pincés)");
-            singleHandZoomActive = true;
-            initialFingerState = "pinched";
-            initialFingerDistance = totalPinchDistance;
-            saveScrollPosition(); // Sauvegarder la position de défilement
-            canZoomAgain = true;
-        }
-        else if (fourFingersPinched) {
-            console.log("INIT: Geste de ZOOM OUT détecté (4 doigts écartés)");
-            singleHandZoomActive = true;
-            initialFingerState = "spread";
-            initialFingerDistance = totalPinchDistance;
-            saveScrollPosition(); // Sauvegarder la position de défilement
-            canZoomAgain = true;
-        }
-    }
-    else {
-        // ZOOM EN COURS - Vérifier les changements
-
-        // Pour ZOOM IN (écartement après pincement)
-        if (initialFingerState === "pinched") {
-            const distanceDelta = totalPinchDistance - initialFingerDistance;
-            console.log(`ZOOM IN: Delta=${distanceDelta}, Seuil=${fingerDistanceThreshold}`);
-
-            // Si l'écartement est suffisant
-            if (distanceDelta > fingerDistanceThreshold && canZoomAgain) {
-                console.log("EXÉCUTION: ZOOM IN");
-
-                // Déclencher le zoom
-                if (currentZoomIndex < zoomLevels.length - 1) {
-                    startZoomAnimation(zoomLevels[currentZoomIndex], zoomLevels[currentZoomIndex + 1]);
-                    currentZoomIndex++;
-
-                    // Bloquer temporairement pour éviter les déclenchements multiples
-                    canZoomAgain = false;
-                    setTimeout(() => {
-                        canZoomAgain = true;
-                        console.log("Zoom réactivé");
-                    }, 700);
-                }
-            }
-        }
-
-        // Pour ZOOM OUT (pincement après écartement)
-        else if (initialFingerState === "spread") {
-            const distanceDelta = initialFingerDistance - totalPinchDistance;
-            console.log(`ZOOM OUT: Delta=${distanceDelta}, Seuil=${fingerDistanceThreshold}`);
-
-            // Si le pincement est suffisant
-            if (distanceDelta > fingerDistanceThreshold && canZoomAgain) {
-                console.log("EXÉCUTION: ZOOM OUT");
-
-                // Déclencher le dézoom
-                if (currentZoomIndex > 0) {
-                    startZoomAnimation(zoomLevels[currentZoomIndex], zoomLevels[currentZoomIndex - 1]);
-                    currentZoomIndex--;
-
-                    // Bloquer temporairement
-                    canZoomAgain = false;
-                    setTimeout(() => {
-                        canZoomAgain = true;
-                        console.log("Dézoom réactivé");
-                    }, 700);
-                }
-            }
-        }
-
-        // Réinitialiser si les conditions de base ne sont plus remplies
-        if ((!threeFingersPinched && initialFingerState === "pinched") ||
-            (!fourFingersPinched && initialFingerState === "spread")) {
-            console.log("RESET: Conditions de zoom non remplies");
-            singleHandZoomActive = false;
-            initialFingerState = null;
+            // Bloquer temporairement pour éviter les zooms multiples
+            canZoomAgain = false;
+            setTimeout(() => {
+                canZoomAgain = true;
+                console.log("Prêt pour un nouveau zoom/dézoom");
+            }, 800);
         }
     }
 
-    // ------- SCROLL (si aucun zoom n'est actif) -------
-    if (!singleHandZoomActive) {
-        // Position moyenne pour le pincement index-pouce
-        const pinchPosition = {
-            x: (thumb.x + index.x) / 2,
-            y: (thumb.y + index.y) / 2
-        };
+    // 2. ZOOM OUT avec le pouce et l'annulaire
+    else if (thumbRingDistance < pinchThreshold && thumbIndexDistance > pinchThreshold * 1.4 && canZoomAgain) {
+        console.log("ZOOM OUT avec pouce+annulaire");
 
-        // Détecter le pincement simple (pouce-index) pour le scroll
-        if (thumbIndexDistance < pinchThreshold &&
-            thumbMiddleDistance > fullPinchThreshold &&
-            thumbRingDistance > fullPinchThreshold) {
+        // Diminuer le niveau de zoom
+        if (currentZoomIndex > 0) {
+            zoomCenterX = 0.5; // Centrer le zoom
+            zoomCenterY = 0.3; // Légèrement au-dessus du centre
 
-            if (!isPinching) {
-                // Début du pincement
-                isPinching = true;
+            startZoomAnimation(zoomLevels[currentZoomIndex], zoomLevels[currentZoomIndex - 1]);
+            currentZoomIndex--;
+
+            // Bloquer temporairement
+            canZoomAgain = false;
+            setTimeout(() => {
+                canZoomAgain = true;
+                console.log("Prêt pour un nouveau zoom/dézoom");
+            }, 800);
+        }
+    }
+
+        // -------- GESTION DU SCROLL --------
+
+    // Le scroll est activé seulement avec le pincement pouce-index
+    else if (thumbIndexDistance < pinchThreshold) {
+        if (!isPinching) {
+            // Début du pincement pour scroll
+            isPinching = true;
+            previousPinchPosition = pinchPosition;
+        } else if (previousPinchPosition) {
+            // Continuer le scroll
+            const verticalMovement = pinchPosition.y - previousPinchPosition.y;
+
+            // Si mouvement suffisant et temps écoulé
+            const currentTime = millis();
+            if (Math.abs(verticalMovement) > scrollThreshold &&
+                currentTime - lastScrollTime > scrollDebounce) {
+
+                // Exécuter le scroll (direction non inversée)
+                triggerSweetScroll(verticalMovement > 0 ? 'down' : 'up');
+                lastScrollTime = currentTime;
                 previousPinchPosition = pinchPosition;
-            } else if (previousPinchPosition) {
-                // Calculer mouvement vertical
-                const verticalMovement = pinchPosition.y - previousPinchPosition.y;
-
-                // Déclencher le scroll si mouvement suffisant
-                const currentTime = millis();
-                if (Math.abs(verticalMovement) > scrollThreshold &&
-                    currentTime - lastScrollTime > scrollDebounce) {
-
-                    triggerSweetScroll(verticalMovement > 0 ? 'down' : 'up');
-                    lastScrollTime = currentTime;
-                    previousPinchPosition = pinchPosition;
-                }
             }
-        } else {
-            // Fin du pincement
-            isPinching = false;
-            previousPinchPosition = null;
         }
+    } else {
+        // Fin du pincement pour scroll
+        isPinching = false;
+        previousPinchPosition = null;
     }
 }
 
-function detectTwoHandsZoomGesture() {
-    // Vérifier s'il y a deux mains
-    if (hands.length < 2) {
-        if (isZooming) {
-            isZooming = false;
-            setScrollingEnabled(true);
-            pinchDistanceHistory = [];
+function drawGestureInstructions() {
+    const textY = height - 40;
+    fill(0, 0, 0, 180);
+    noStroke();
+    rect(0, height - 60, width, 60);
+
+    textSize(18);
+    textAlign(CENTER);
+    strokeWeight(1);
+
+    if (isPinching) {
+        fill(0, 200, 255);
+        text("🔄 SCROLL: Déplacez la main vers le haut/bas", width/2, textY);
+    } else {
+        fill(255);
+        if (hands.length > 0) {
+            text("👆 Pouce+Index: Scroll | 👆 Pouce+Majeur: Zoom+ | 👆 Pouce+Annulaire: Zoom-", width/2, textY);
+        } else {
+            text("En attente d'une main...", width/2, textY);
         }
+    }
+
+    // Afficher le niveau de zoom
+    fill(255);
+    textSize(16);
+    text(`Zoom: ${currentZoomLevel.toFixed(2)}x`, width/2, textY - 25);
+}
+
+function detectTwoHandsZoomGesture() {
+    if (hands.length < 2) {
+        isZooming = false;
+        pinchDistanceHistory = [];
         return;
     }
 
-    // Récupérer les mains droite et gauche
+    // Identifier les mains droite et gauche
     const rightHand = hands.find(hand => hand.handedness === 'Right');
     const leftHand = hands.find(hand => hand.handedness === 'Left');
 
-    if (!rightHand || !leftHand || !rightHand.keypoints || !leftHand.keypoints) return;
+    if (!rightHand || !leftHand ||
+        !rightHand.keypoints || !leftHand.keypoints ||
+        rightHand.keypoints.length < 21 || leftHand.keypoints.length < 21) {
+        return;
+    }
 
-    // Vérifier si les deux mains font un pincement
+    // Points pour le pincement
     const rightThumb = rightHand.keypoints[4];
     const rightIndex = rightHand.keypoints[8];
     const leftThumb = leftHand.keypoints[4];
     const leftIndex = leftHand.keypoints[8];
 
-    // Vérifier que tous les points nécessaires sont définis
-    if (!rightThumb || !rightIndex || !leftThumb || !leftIndex) return;
-
-    const rightPinchDistance = dist(rightThumb.x, rightThumb.y, rightIndex.x, rightIndex.y);
-    const leftPinchDistance = dist(leftThumb.x, leftThumb.y, leftIndex.x, leftIndex.y);
-
-    // Les deux mains doivent pincer
-    const bothPinching = rightPinchDistance < pinchThreshold && leftPinchDistance < pinchThreshold;
+    // Vérifier si les deux mains font un pincement
+    const rightPinching = dist(rightThumb.x, rightThumb.y, rightIndex.x, rightIndex.y) < pinchThreshold;
+    const leftPinching = dist(leftThumb.x, leftThumb.y, leftIndex.x, leftIndex.y) < pinchThreshold;
+    const bothPinching = rightPinching && leftPinching;
 
     if (bothPinching) {
-        // Calculer les centres de pincement
+        // Calculer le point central de chaque pincement
         const rightCenter = {
             x: (rightThumb.x + rightIndex.x) / 2,
             y: (rightThumb.y + rightIndex.y) / 2
@@ -438,79 +382,83 @@ function detectTwoHandsZoomGesture() {
             y: (leftThumb.y + leftIndex.y) / 2
         };
 
-        // Point central pour le zoom
+        // Calculer le point central entre les deux mains
         const midPoint = {
             x: (rightCenter.x + leftCenter.x) / 2,
             y: (rightCenter.y + leftCenter.y) / 2
         };
 
-        // Inverser horizontalement
+        // Convertir les coordonnées pour la vidéo inversée
         const invertedMidPointX = width - midPoint.x;
 
-        // Position relative pour le zoom
+        // Calculer la position relative dans la fenêtre (en pourcentage)
         zoomCenterX = invertedMidPointX / width;
         zoomCenterY = midPoint.y / height;
 
-        // Distance entre les points de pincement
+        // Calculer la distance entre les deux points de pincement
         const currentPinchDistance = dist(rightCenter.x, rightCenter.y, leftCenter.x, leftCenter.y);
 
-        // Historique pour le lissage
+        // Ajouter à l'historique des distances pour lissage
         pinchDistanceHistory.push(currentPinchDistance);
+
+        // Limiter la taille de l'historique
         if (pinchDistanceHistory.length > pinchHistorySize) {
             pinchDistanceHistory.shift();
         }
+
+        // Calculer la moyenne des distances récentes
         const avgPinchDistance = pinchDistanceHistory.reduce((sum, val) => sum + val, 0) / pinchDistanceHistory.length;
 
         if (!isZooming) {
-            // Début du zoom à deux mains
+            // Début du geste de zoom
             isZooming = true;
-            setScrollingEnabled(false);
             initialPinchDistance = avgPinchDistance;
             lastPinchDistance = avgPinchDistance;
-            saveScrollPosition();
 
-            // Réinitialiser la gestuelle complète
-            gestureCompleted = false;
-
-            // Autoriser un nouveau zoom
-            canZoomAgain = true;
+            // Mémoriser la position de scroll actuelle
+            initialScrollX = window.scrollX;
+            initialScrollY = window.scrollY;
         } else {
-            // Zoom en cours
-            const pinchDelta = avgPinchDistance - initialPinchDistance;
+            // Geste de zoom en cours
+            const pinchDelta = avgPinchDistance - lastPinchDistance;
 
-            // Déterminer si on zoome ou dézoome en fonction de la direction du mouvement
-            // mais seulement une fois par geste
-            if (Math.abs(pinchDelta) > zoomThreshold * 3 && canZoomAgain) {
-                if (pinchDelta > 0) {
-                    // Zoom avant
-                    if (currentZoomIndex < zoomLevels.length - 1) {
-                        startZoomAnimation(zoomLevels[currentZoomIndex], zoomLevels[currentZoomIndex + 1]);
-                        currentZoomIndex++;
-                    }
-                } else {
-                    // Zoom arrière
-                    if (currentZoomIndex > 0) {
-                        startZoomAnimation(zoomLevels[currentZoomIndex], zoomLevels[currentZoomIndex - 1]);
-                        currentZoomIndex--;
-                    }
+            // Si le mouvement dépasse le seuil et le temps minimal est écoulé
+            const currentTime = millis();
+            if (Math.abs(pinchDelta) > zoomThreshold &&
+                currentTime - lastZoomStepTime > zoomStepDebounce) {
+
+                // Déterminer la direction du zoom (éloignement ou rapprochement)
+                const newZoomDirection = pinchDelta > 0 ? 1 : -1;
+
+                // Si la direction a changé, réinitialiser la distance de référence
+                if (newZoomDirection !== zoomDirection) {
+                    lastPinchDistance = avgPinchDistance;
+                    zoomDirection = newZoomDirection;
+                    return;
                 }
 
-                // Bloquer tout nouveau zoom tant qu'on n'a pas relâché puis pincé à nouveau
-                canZoomAgain = false;
-                gestureCompleted = true;
+                // Incrémenter ou décrémenter l'index de zoom selon la direction
+                if (newZoomDirection > 0 && currentZoomIndex < zoomLevels.length - 1) {
+                    // ZOOM IN - Les mains s'écartent
+                    startZoomAnimation(zoomLevels[currentZoomIndex], zoomLevels[currentZoomIndex + 1]);
+                    currentZoomIndex++;
+                    console.log(`ZOOM IN à deux mains: ${zoomLevels[currentZoomIndex].toFixed(2)}x`);
+                } else if (newZoomDirection < 0 && currentZoomIndex > 0) {
+                    // ZOOM OUT - Les mains se rapprochent
+                    startZoomAnimation(zoomLevels[currentZoomIndex], zoomLevels[currentZoomIndex - 1]);
+                    currentZoomIndex--;
+                    console.log(`ZOOM OUT à deux mains: ${zoomLevels[currentZoomIndex].toFixed(2)}x`);
+                }
+
+                // Mettre à jour pour le prochain calcul
+                lastPinchDistance = avgPinchDistance;
+                lastZoomStepTime = currentTime;
             }
         }
     } else {
         // Fin du geste de zoom
-        if (isZooming) {
-            isZooming = false;
-            setScrollingEnabled(true);
-            pinchDistanceHistory = [];
-
-            // Si les mains ne pincent plus du tout, on peut considérer que
-            // la gestuelle est terminée et réinitialiser
-            gestureCompleted = false;
-        }
+        isZooming = false;
+        pinchDistanceHistory = [];
     }
 }
 
@@ -673,9 +621,8 @@ function drawGestureStatus() {
 }
 
 function saveScrollPosition() {
-    initialScrollX = window.scrollX || window.pageXOffset;
-    initialScrollY = window.scrollY || window.pageYOffset;
-    console.log(`Position de scroll sauvegardée: (${initialScrollX}, ${initialScrollY})`);
+    initialScrollX = window.scrollX;
+    initialScrollY = window.scrollY;
 }
 
 function applyZoom(zoomFactor) {
@@ -699,8 +646,6 @@ function setScrollingEnabled(enabled) {
 }
 
 function startZoomAnimation(startLevel, endLevel) {
-    console.log(`Animation de zoom: ${startLevel.toFixed(2)} → ${endLevel.toFixed(2)}`);
-
     // Sauvegarder les positions de départ et d'arrivée
     zoomAnimationStartLevel = startLevel;
     zoomAnimationEndLevel = endLevel;
@@ -709,13 +654,45 @@ function startZoomAnimation(startLevel, endLevel) {
     zoomAnimationStartTime = millis();
     isZoomAnimating = true;
 
-    // Jouer le son de feedback (optionnel)
+    // Retour sonore
     if (endLevel > startLevel) {
-        // Son de zoom in
         console.log("Zoom IN");
     } else {
-        // Son de zoom out
         console.log("Zoom OUT");
+    }
+}
+
+function updateZoom() {
+    if (!isZoomAnimating) return;
+
+    const currentTime = millis();
+    const elapsed = currentTime - zoomAnimationStartTime;
+    const duration = zoomAnimationDuration;
+
+    // Calculer la progression (0 à 1)
+    let progress = Math.min(elapsed / duration, 1);
+
+    // Appliquer une courbe d'easing pour une animation fluide
+    let easedProgress;
+    if (progress < 0.5) {
+        easedProgress = 4 * progress * progress * progress;
+    } else {
+        const f = progress - 1;
+        easedProgress = 1 + 4 * f * f * f;
+    }
+
+    // Interpoler entre les niveaux de zoom de départ et d'arrivée
+    currentZoomLevel = zoomAnimationStartLevel + (zoomAnimationEndLevel - zoomAnimationStartLevel) * easedProgress;
+
+    // Appliquer le zoom
+    applyCurrentZoom();
+
+    // Vérifier si l'animation est terminée
+    if (progress >= 1) {
+        isZoomAnimating = false;
+        currentZoomLevel = zoomAnimationEndLevel;
+        applyCurrentZoom();
+        console.log(`Animation terminée: Zoom=${currentZoomLevel.toFixed(2)}x`);
     }
 }
 
@@ -837,15 +814,8 @@ function determineActiveHand(handsList) {
         const leftHand = handsList.find(hand => hand.handedness === 'Left');
 
         if (rightHand && leftHand) {
-            const timeDifference = Math.abs(handDetectionTimes['Right'] - handDetectionTimes['Left']);
-
-            if (timeDifference < 500) {
-                // Si les deux mains apparaissent presque simultanément, priorité à la main droite
-                activeHandId = 'Right';
-            } else {
-                // Sinon, priorité à la main qui est apparue en premier
-                activeHandId = handDetectionTimes['Right'] < handDetectionTimes['Left'] ? 'Right' : 'Left';
-            }
+            // Avec deux mains, on ne définit pas de main active (zoom à deux mains)
+            activeHandId = null;
         } else if (rightHand) {
             activeHandId = 'Right';
         } else if (leftHand) {
@@ -916,25 +886,14 @@ function detectScrollGesture() {
 function triggerSweetScroll(direction) {
     console.log(`Déclenchement scroll: ${direction}`);
 
-    // Distance de défilement - ajustez selon vos besoins
+    // Distance de défilement (dans la direction originale)
     const scrollDistance = direction === 'down' ? 300 : -300;
-
-    // Activer temporairement le scroll si nécessaire
-    const wasDisabled = document.body.style.overflow === 'hidden';
-    if (wasDisabled) document.body.style.overflow = 'auto';
 
     // Effectuer le scroll
     window.scrollBy({
         top: scrollDistance,
         behavior: 'smooth'
     });
-
-    // Remettre le scroll dans son état précédent si nécessaire
-    if (wasDisabled) {
-        setTimeout(() => {
-            document.body.style.overflow = 'hidden';
-        }, 500); // Délai pour permettre au scroll de s'effectuer
-    }
 }
 
 function cleanup() {

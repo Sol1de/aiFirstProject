@@ -120,41 +120,57 @@ function drawGestureInstructions() {
     // Fond semi-transparent
     fill(0, 0, 0, 180);
     noStroke();
-    rect(0, height - 60, width, 60);
+    rect(0, height - 70, width, 70);
 
     // Texte d'instructions
-    fill(255);
     textSize(16);
     textAlign(CENTER);
 
-    const textY = height - 22;
+    const textY = height - 30;
 
     if (hands.length === 0) {
+        fill(255);
         text("Montrez vos mains à la caméra", width/2, textY);
     } else if (hands.length === 2) {
+        fill(255);
         text("Deux mains: Pincez pouce-index des deux mains et écartez pour zoomer", width/2, textY);
-    } else if (gesturePhase === 'start-zoom-in') {
-        fill(255, 255, 0);
-        text("✨ ZOOM IN: Écartez le pouce et le majeur", width/2, textY);
-    } else if (gesturePhase === 'spreading') {
-        fill(255, 255, 0);
-        text("✨ ZOOM IN: Continuez à écarter pour zoomer davantage", width/2, textY);
-    } else if (gesturePhase === 'start-zoom-out') {
-        fill(255, 150, 150);
-        text("✨ ZOOM OUT: Rapprochez le pouce et l'annulaire", width/2, textY);
-    } else if (isPinching) {
-        fill(100, 200, 255);
-        text("🔄 SCROLL: Déplacez la main vers le haut/bas", width/2, textY);
     } else {
-        text("👆 Pincez pouce-index pour SCROLL | Pouce-majeur (écarter) pour ZOOM+ | Pouce-annulaire pour ZOOM-", width/2, textY-10);
-        text("Double-clic pour réinitialiser le zoom", width/2, textY+15);
+        // Instructions basées sur l'état du geste
+        if (gesturePhase === 'start-zoom-in') {
+            fill(255, 255, 0);
+            text("✨ ZOOM IN: Maintenant écartez progressivement le pouce et le majeur", width/2, textY);
+        } else if (gesturePhase === 'spreading') {
+            fill(255, 255, 0);
+            text("✨ ZOOM IN: Continuez à écarter pour zoomer davantage", width/2, textY);
+        } else if (gesturePhase === 'start-zoom-out') {
+            fill(255, 150, 150);
+            text("✨ ZOOM OUT: Maintenant rapprochez le pouce et l'annulaire jusqu'à les pincer", width/2, textY);
+        } else if (isPinching) {
+            fill(100, 200, 255);
+            text("🔄 SCROLL: Déplacez la main vers le haut/bas", width/2, textY);
+        } else {
+            // Instructions générales
+            fill(255);
+            text("Gestes disponibles:", width/2, textY - 35);
+
+            // Utiliser des icônes et des couleurs pour rendre les instructions plus claires
+            fill(100, 200, 255);
+            text("👆 Pincez pouce-index pour DÉFILER", width/2, textY - 15);
+
+            fill(255, 255, 0);
+            text("👌 Pincez puis écartez pouce-majeur pour ZOOMER", width/2, textY + 5);
+
+            fill(255, 150, 150);
+            text("👐 Écartez puis pincez pouce-annulaire pour DÉZOOMER", width/2, textY + 25);
+        }
     }
 
     // Afficher le niveau de zoom
     fill(255);
     textSize(14);
-    text(`Zoom: ${currentZoomLevel.toFixed(2)}x`, width/2, height - 40);
+    text(`Zoom: ${currentZoomLevel.toFixed(2)}x`, width/2, height - 50);
 }
+
 
 function displayDebugInfo() {
     // Fond semi-transparent pour les infos de débogage

@@ -103,3 +103,5 @@ function detectFistState(hand) {
 
     return false;
 }
+
+document.dispatchEvent(new CustomEvent('resourceLoaded', { detail: { name: 'handDetection' } }));

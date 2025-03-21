@@ -380,3 +380,5 @@ function adjustScrollToMaintainFocus(zoomRatio) {
         window.scrollTo(newScrollX, newScrollY);
     }
 }
+
+document.dispatchEvent(new CustomEvent('resourceLoaded', { detail: { name: 'handDetection' } }));

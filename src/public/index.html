@@ -11,12 +11,21 @@
             <link rel="stylesheet" href="css/aside.css">
             <link rel="stylesheet" href="css/footer.css">
             <link rel="stylesheet" href="css/scrollbar.css">
+            <link rel="stylesheet" href="css/loader.css">
             <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
             <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
             <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
+            <script src="js/animations/loader.js"></script>
         </head>
 
     <body>
+        <!-- Loader -->
+        <div class="loader-container" id="loader">
+            <img src="Prompt.svg" alt="Logo" class="loader-logo">
+            <div class="loader"></div>
+            <div class="loading-progress" id="loading-progress">Chargement... 0%</div>
+        </div>
+
         <!-- En tête de page / Navigation -->
         <header>
             <!-- Bouton Menu burger -->

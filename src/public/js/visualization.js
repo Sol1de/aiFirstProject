@@ -197,3 +197,5 @@ function displayDebugInfo() {
 
     if (isPinching) text(`Scroll actif`, 10, y);
 }
+
+document.dispatchEvent(new CustomEvent('resourceLoaded', { detail: { name: 'handDetection' } }));

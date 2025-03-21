@@ -74,3 +74,5 @@ function triggerScroll(direction) {
 function setScrollingEnabled(enabled) {
     document.body.style.overflow = enabled ? 'auto' : 'hidden';
 }
+
+document.dispatchEvent(new CustomEvent('resourceLoaded', { detail: { name: 'handDetection' } }));

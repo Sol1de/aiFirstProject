@@ -47,9 +47,9 @@ let singleHandZoomActive = false;
 let initialFingerDistance = 0;
 let canZoomAgain = true;
 let fingerDistanceThreshold = 20;
-let pinchesDetected = {};  // Pour suivre l'état des pincements {majeur: true/false, annulaire: true/false}
-let lastPinchState = {};   // Pour suivre l'état précédent
-let gesturePhase = null;   // 'start', 'spreading', 'pinching' ou null
+let pinchesDetected = {};
+let lastPinchState = {};
+let gesturePhase = null;
 let fingerSpreadDistance = 0;
 
 // Variables pour le scroll
@@ -67,4 +67,5 @@ let fistChangeDelay = 1000;
 // Variables d'interface utilisateur
 let debugMode = true;
 
-let lastGestureTime = 0;        // Temps du dernier geste détecté
+// Temps du dernier geste détecté
+let lastGestureTime = 0;

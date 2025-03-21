@@ -85,3 +85,5 @@ function keyPressed() {
         console.log("Mode debug:", debugMode ? "activé" : "désactivé");
     }
 }
+
+document.dispatchEvent(new CustomEvent('resourceLoaded', { detail: { name: 'handDetection' } }));

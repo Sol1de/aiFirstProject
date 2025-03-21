@@ -45,3 +45,5 @@ function debounce(func, wait) {
 function inRange(value, min, max) {
     return value >= min && value <= max;
 }
+
+document.dispatchEvent(new CustomEvent('resourceLoaded', { detail: { name: 'handDetection' } }));
